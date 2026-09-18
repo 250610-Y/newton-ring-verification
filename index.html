@@ -1,0 +1,157 @@
+<!doctype html>
+<html lang="zh-CN">
+<head>
+  <meta charset="utf-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1">
+  <meta name="description" content="牛顿环实验单张核验、缺陷热力图与班级批量统计交互原型">
+  <title>牛顿环实验智能核验平台</title>
+  <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23060b16'/%3E%3Cg fill='none' stroke='%234de3c1' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='21'/%3E%3Ccircle cx='32' cy='32' r='13'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3C/g%3E%3C/svg%3E">
+  <link rel="stylesheet" href="./styles.css">
+</head>
+<body>
+  <div class="app-shell">
+    <aside class="sidebar" aria-label="主导航">
+      <div class="brand">
+        <div class="brand-mark" aria-hidden="true"><span></span><span></span><span></span></div>
+        <div><strong>NewtonLab</strong><small>实验智能核验平台</small></div>
+      </div>
+      <nav class="nav-list">
+        <button class="nav-item is-active" data-view="single"><span>01</span><b>单张实验核验</b><small>图像与曲率比对</small></button>
+        <button class="nav-item" data-view="defect"><span>02</span><b>缺陷与平整度</b><small>多图层检测结果</small></button>
+        <button class="nav-item" data-view="batch"><span>03</span><b>班级批量统计</b><small>汇总与风险筛查</small></button>
+      </nav>
+      <div class="source-note">
+        <i></i><span>演示数据已载入</span>
+        <small>来自 experiment_output</small>
+      </div>
+    </aside>
+
+    <main>
+      <header class="topbar">
+        <div>
+          <p class="eyebrow">PHYSICS LAB · NEWTON RINGS</p>
+          <h1>牛顿环实验智能核验平台</h1>
+        </div>
+        <div class="top-actions">
+          <div class="sample-pill"><span>当前样本</span><strong id="top-sample">NR-024</strong></div>
+          <span class="prototype-badge">原型模式</span>
+        </div>
+      </header>
+
+      <section class="workspace is-active" id="view-single" aria-labelledby="single-title">
+        <div class="section-heading">
+          <div><p class="section-index">01 / VERIFY</p><h2 id="single-title">单张实验核验</h2><p>上传实验图像或选用真实样例，核对学生提交的曲率半径。</p></div>
+          <label class="sample-select">演示情景
+            <select id="scenario-select">
+              <option value="qualified">NR-024 · 合格样例</option>
+              <option value="operation-error">NR-024 · 操作误差</option>
+              <option value="review">NR-024 · 重点复核</option>
+            </select>
+          </label>
+        </div>
+
+        <div class="single-grid">
+          <div class="panel image-panel">
+            <div class="panel-top"><div><span class="panel-kicker">INPUT FRAME</span><h3>实验图像</h3></div><span class="resolution">555 × 556 px</span></div>
+            <div class="image-stage">
+              <img id="input-image" src="./assets/sample-original.png" alt="牛顿环实验原始增强图像">
+              <div class="scan-line" aria-hidden="true"></div>
+              <div class="focus-target" aria-hidden="true"><span></span></div>
+              <span class="image-tag">RAW / ENHANCED</span>
+            </div>
+            <div class="upload-row">
+              <label class="upload-button" for="image-upload"><span>＋</span> 选择本地图像</label>
+              <input id="image-upload" type="file" accept="image/*" hidden>
+              <p id="upload-note">或拖放到图像区域 · PNG / JPG</p>
+            </div>
+          </div>
+
+          <div class="control-column">
+            <div class="panel metric-entry">
+              <div class="panel-top"><div><span class="panel-kicker">STUDENT REPORT</span><h3>学生提交值</h3></div><span class="unit-pill">单位 m</span></div>
+              <label for="student-radius">曲率半径 R</label>
+              <div class="number-input"><input id="student-radius" type="number" min="0.0001" step="0.0001" value="0.2018" aria-describedby="radius-error"><span>m</span></div>
+              <p class="field-error" id="radius-error" role="alert"></p>
+              <button class="primary-button" id="run-analysis"><span>开始智能核验</span><b>→</b></button>
+              <p class="mode-hint">原型模式：分析结果来自预生成实验样本</p>
+            </div>
+
+            <div class="panel progress-panel" aria-live="polite">
+              <div class="progress-head"><span>分析流程</span><strong id="progress-percent">0%</strong></div>
+              <div class="progress-track"><span id="progress-bar"></span></div>
+              <ol class="steps" id="analysis-steps">
+                <li data-step="0"><i>1</i><span>图像预处理</span><b>等待</b></li>
+                <li data-step="1"><i>2</i><span>圆心定位</span><b>等待</b></li>
+                <li data-step="2"><i>3</i><span>圆环拟合</span><b>等待</b></li>
+                <li data-step="3"><i>4</i><span>曲率计算</span><b>等待</b></li>
+              </ol>
+            </div>
+          </div>
+
+          <div class="panel result-panel" id="result-panel">
+            <div class="result-status"><span id="result-icon">✓</span><div><small>VERIFICATION RESULT</small><h3 id="result-label">等待核验</h3></div></div>
+            <div class="result-metrics">
+              <div><span>系统计算 R</span><strong>0.1969 <small>m</small></strong><em>25 环参与拟合</em></div>
+              <div><span>学生提交 R</span><strong id="student-result">— <small>m</small></strong><em>实验报告值</em></div>
+              <div><span>相对误差</span><strong id="error-result">—</strong><em>允许误差 ≤ 8%</em></div>
+            </div>
+            <div class="result-note"><span>核验建议</span><p id="result-note">输入学生结果后开始核验，系统将根据真实样本曲率半径计算相对误差。</p></div>
+            <div class="quality-row"><span>拟合优度 R²</span><div class="quality-line"><i style="width:93.9%"></i></div><strong>0.939</strong></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" id="view-defect" aria-labelledby="defect-title" hidden>
+        <div class="section-heading">
+          <div><p class="section-index">02 / INSPECT</p><h2 id="defect-title">缺陷与平整度</h2><p>查看同一实验样本的检测叠加、缺陷掩膜与面形偏差。</p></div>
+          <span class="data-chip">真实产物 · NR-024</span>
+        </div>
+        <div class="defect-grid">
+          <div class="panel viewer-panel">
+            <div class="layer-tabs" role="tablist" aria-label="检测图层">
+              <button role="tab" aria-selected="true" data-layer="original">原图</button>
+              <button role="tab" aria-selected="false" data-layer="rings">圆环标注</button>
+              <button role="tab" aria-selected="false" data-layer="overlay">缺陷叠加</button>
+              <button role="tab" aria-selected="false" data-layer="mask">缺陷掩膜</button>
+              <button role="tab" aria-selected="false" data-layer="heatmap">平整度热力图</button>
+            </div>
+            <div class="viewer-stage">
+              <img id="layer-image" src="./assets/sample-original.png" alt="牛顿环实验原图">
+              <div class="viewer-meta"><span id="layer-name">原始增强图</span><span>Sample NR-024</span></div>
+              <div class="image-error" id="image-error" hidden><strong>该图层暂时无法加载</strong><p id="image-error-name"></p><button id="return-original">返回原图</button></div>
+            </div>
+          </div>
+          <div class="insight-column">
+            <div class="panel optical-card"><div class="optic-rings"><i></i><i></i><i></i><i></i></div><div><span>检测中心</span><strong>(275.9, 251.8)</strong><small>同心度评分 0.315</small></div></div>
+            <div class="metric-card-grid">
+              <div class="panel mini-metric"><span>有效环数</span><strong>29</strong><small>检测完整</small></div>
+              <div class="panel mini-metric"><span>局部缺陷</span><strong>1</strong><small class="warning">中度凹陷</small></div>
+              <div class="panel mini-metric"><span>拟合优度</span><strong>93.9%</strong><small>R² = 0.938985</small></div>
+              <div class="panel mini-metric"><span>比例尺</span><strong>213</strong><small>px / mm</small></div>
+            </div>
+            <div class="panel defect-detail"><div class="detail-head"><span>DEFECT #01</span><b>建议复测</b></div><h3>中度凹陷</h3><p>检测中心位于 (187, 307)，方向角 −29.18°。该区域存在局部形变，建议结合原始记录进一步检测。</p><div class="location-grid"><span>类型 <b>凹陷</b></span><span>半径 <b>32 px</b></span><span>风险 <b>中度</b></span><span>来源 <b>真实报告</b></span></div></div>
+          </div>
+        </div>
+      </section>
+
+      <section class="workspace" id="view-batch" aria-labelledby="batch-title" hidden>
+        <div class="section-heading">
+          <div><p class="section-index">03 / OVERVIEW</p><h2 id="batch-title">班级批量统计</h2><p>汇总实验提交情况，快速定位需要复查的异常记录。</p></div>
+          <button class="export-button" id="export-button">⇩ 导出当前结果</button>
+        </div>
+        <div class="summary-strip" id="summary-strip"></div>
+        <div class="batch-grid">
+          <div class="panel distribution-panel"><div class="panel-top"><div><span class="panel-kicker">CLASS DISTRIBUTION</span><h3>核验结果分布</h3></div><span class="data-chip">24 份报告</span></div><div class="donut-wrap"><div class="donut" id="donut"><div><strong id="pass-rate">—</strong><span>合格率</span></div></div><div class="legend" id="distribution-legend"></div></div></div>
+          <div class="panel table-panel">
+            <div class="table-tools"><label>搜索学生编号<input id="record-search" type="search" placeholder="例如 A012"></label><label>核验类别<select id="status-filter"><option value="all">全部结果</option><option value="qualified">合格</option><option value="operation-error">操作误差</option><option value="review">重点复核</option></select></label><span id="export-toast" role="status"></span></div>
+            <div class="table-scroll"><table><thead><tr><th>学生编号</th><th>系统 R / m</th><th>学生 R / m</th><th>相对误差</th><th>判定</th></tr></thead><tbody id="records-body"></tbody></table><div class="empty-state" id="empty-state" hidden><strong>没有匹配的记录</strong><p>调整搜索条件或清除筛选后再试。</p><button id="clear-filters">清除筛选</button></div></div>
+          </div>
+        </div>
+        <p class="batch-footnote">学生编号与提交值为匿名演示数据；系统曲率与图像指标来自真实实验输出。</p>
+      </section>
+    </main>
+  </div>
+  <script type="module" src="./app.js"></script>
+  <script type="module" src="./webmcp.js"></script>
+</body>
+</html>
