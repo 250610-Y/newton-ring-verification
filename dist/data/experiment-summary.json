@@ -1,0 +1,18 @@
+{
+  "sampleId": "NR-024",
+  "sourcePath": "D:/NewtonRingDetect/experiment_output/pipeline_2cb711837510202abe495ac164e167ae/2cb711837510202abe495ac164e167ae_combined_report.json",
+  "imageSize": [555, 556],
+  "ringCenter": [275.9245, 251.8141],
+  "ringsMeasured": 29,
+  "scalePxPerMm": 213,
+  "curvatureRadiusM": 0.1969,
+  "rSquared": 0.938985,
+  "defect": {
+    "count": 1,
+    "type": "凹陷",
+    "level": "中度",
+    "center": [187, 307],
+    "radiusPx": 32
+  },
+  "prototypeNotice": "图像与系统指标来自真实实验输出；学生编号及提交值为匿名演示数据。"
+}
