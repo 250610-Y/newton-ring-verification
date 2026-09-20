@@ -1,0 +1,71 @@
+.calibration-block {
+  margin: 0 0 17px;
+  padding: 13px;
+  border: 1px solid #274354;
+  border-radius: 13px;
+  background: linear-gradient(135deg, rgba(80, 227, 194, 0.08), rgba(19, 34, 49, 0.42));
+}
+
+.calibration-heading {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 12px;
+}
+
+.calibration-heading button {
+  border: 0;
+  padding: 3px 0;
+  background: transparent;
+  color: var(--cyan);
+  font: 650 12px inherit;
+  cursor: pointer;
+}
+
+.calibration-heading button:hover,
+.calibration-heading button:focus-visible {
+  outline: none;
+  text-decoration: underline;
+}
+
+.calibration-input input {
+  padding: 13px;
+  font-size: 24px;
+}
+
+.calibration-help {
+  margin: 8px 0 0;
+  color: #9fb0c5;
+  font-size: 12px;
+  line-height: 1.5;
+}
+
+.calibration-block .field-error {
+  margin-bottom: 2px;
+}
+
+.calibration-readout {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 4px 10px;
+  padding-top: 9px;
+  border-top: 1px solid rgba(80, 227, 194, 0.15);
+}
+
+.calibration-readout span {
+  color: var(--muted);
+  font-size: 11px;
+}
+
+.calibration-readout strong {
+  justify-self: end;
+  color: var(--cyan);
+  font: 700 12px ui-monospace, monospace;
+}
+
+.calibration-readout small {
+  grid-column: 1 / -1;
+  color: #8191a7;
+  font-size: 11px;
+  line-height: 1.45;
+}

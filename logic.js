@@ -1,3 +1,15 @@
+export const BASE_SYSTEM_RADIUS = 1 / ((213 / 161) ** 2);
+
+export function calculateCalibratedRadius(baseRadius, basePxPerMm, pxPerMm) {
+  if (!Number.isFinite(baseRadius) || baseRadius <= 0) {
+    throw new Error("基准曲率半径必须大于 0");
+  }
+  if (!Number.isFinite(basePxPerMm) || basePxPerMm <= 0 || !Number.isFinite(pxPerMm) || pxPerMm <= 0) {
+    throw new Error("标定系数必须大于 0");
+  }
+  return baseRadius * (basePxPerMm / pxPerMm) ** 2;
+}
+
 export function verifyRadius(studentRadius, systemRadius) {
   if (!Number.isFinite(systemRadius) || systemRadius <= 0) {
     throw new Error("系统曲率半径必须大于 0");

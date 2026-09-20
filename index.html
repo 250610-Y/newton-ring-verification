@@ -7,6 +7,7 @@
   <title>牛顿环实验智能核验平台</title>
   <link rel="icon" type="image/svg+xml" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 64 64'%3E%3Crect width='64' height='64' rx='14' fill='%23060b16'/%3E%3Cg fill='none' stroke='%234de3c1' stroke-width='3'%3E%3Ccircle cx='32' cy='32' r='21'/%3E%3Ccircle cx='32' cy='32' r='13'/%3E%3Ccircle cx='32' cy='32' r='5'/%3E%3C/g%3E%3C/svg%3E">
   <link rel="stylesheet" href="./styles.css">
+  <link rel="stylesheet" href="./calibration.css">
 </head>
 <body>
   <div class="app-shell">
@@ -68,12 +69,19 @@
 
           <div class="control-column">
             <div class="panel metric-entry">
-              <div class="panel-top"><div><span class="panel-kicker">STUDENT REPORT</span><h3>学生提交值</h3></div><span class="unit-pill">单位 m</span></div>
+              <div class="panel-top"><div><span class="panel-kicker">CALIBRATION & REPORT</span><h3>装置标定与提交值</h3></div><span class="unit-pill">实时换算</span></div>
+              <div class="calibration-block">
+                <div class="calibration-heading"><label for="px-per-mm">标定系数 α</label><button type="button" id="reset-calibration">恢复 161.0</button></div>
+                <div class="number-input calibration-input"><input id="px-per-mm" type="number" min="0.001" step="0.1" value="161.0" inputmode="decimal" aria-describedby="calibration-help calibration-error"><span>px/mm</span></div>
+                <p class="calibration-help" id="calibration-help">测量图像中一段已知长度：α = 像素长度 ÷ 实际长度（mm）</p>
+                <p class="field-error" id="calibration-error" role="alert"></p>
+                <div class="calibration-readout"><span>当前换算</span><strong id="calibration-readout">1 mm = 161.0 px</strong><small id="calibration-formula">基准样本将按平方反比重算曲率半径</small></div>
+              </div>
               <label for="student-radius">曲率半径 R</label>
-              <div class="number-input"><input id="student-radius" type="number" min="0.0001" step="0.0001" value="0.2018" aria-describedby="radius-error"><span>m</span></div>
+              <div class="number-input"><input id="student-radius" type="number" min="0.0001" step="0.0001" value="1.0250" aria-describedby="radius-error"><span>m</span></div>
               <p class="field-error" id="radius-error" role="alert"></p>
               <button class="primary-button" id="run-analysis"><span>开始智能核验</span><b>→</b></button>
-              <p class="mode-hint">原型模式：分析结果来自预生成实验样本</p>
+              <p class="mode-hint">标定值保存在当前浏览器；命令行对应参数为 --px-per-mm</p>
             </div>
 
             <div class="panel progress-panel" aria-live="polite">
@@ -91,7 +99,7 @@
           <div class="panel result-panel" id="result-panel">
             <div class="result-status"><span id="result-icon">✓</span><div><small>VERIFICATION RESULT</small><h3 id="result-label">等待核验</h3></div></div>
             <div class="result-metrics">
-              <div><span>系统计算 R</span><strong>0.1969 <small>m</small></strong><em>25 环参与拟合</em></div>
+              <div><span>系统计算 R</span><strong id="system-result">1.0000 <small>m</small></strong><em id="system-calibration-note">161.0 px/mm · 25 环</em></div>
               <div><span>学生提交 R</span><strong id="student-result">— <small>m</small></strong><em>实验报告值</em></div>
               <div><span>相对误差</span><strong id="error-result">—</strong><em>允许误差 ≤ 8%</em></div>
             </div>
@@ -127,7 +135,7 @@
               <div class="panel mini-metric"><span>有效环数</span><strong>29</strong><small>检测完整</small></div>
               <div class="panel mini-metric"><span>局部缺陷</span><strong>1</strong><small class="warning">中度凹陷</small></div>
               <div class="panel mini-metric"><span>拟合优度</span><strong>93.9%</strong><small>R² = 0.938985</small></div>
-              <div class="panel mini-metric"><span>比例尺</span><strong>213</strong><small>px / mm</small></div>
+              <div class="panel mini-metric"><span>比例尺</span><strong id="scale-display">161.0</strong><small>px / mm · 当前装置</small></div>
             </div>
             <div class="panel defect-detail"><div class="detail-head"><span>DEFECT #01</span><b>建议复测</b></div><h3>中度凹陷</h3><p>检测中心位于 (187, 307)，方向角 −29.18°。该区域存在局部形变，建议结合原始记录进一步检测。</p><div class="location-grid"><span>类型 <b>凹陷</b></span><span>半径 <b>32 px</b></span><span>风险 <b>中度</b></span><span>来源 <b>真实报告</b></span></div></div>
           </div>

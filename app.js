@@ -1,10 +1,13 @@
-import { filterRecords, serializeRecordsCsv, verifyRadius } from "./logic.js";
+import { BASE_SYSTEM_RADIUS, calculateCalibratedRadius, filterRecords, serializeRecordsCsv, verifyRadius } from "./logic.js";
 
-const SYSTEM_RADIUS = 0.1969;
+const BASE_PX_PER_MM = 213;
+const DEFAULT_PX_PER_MM = 161;
+const CALIBRATION_STORAGE_KEY = "newtonlab:px-per-mm";
+let systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, DEFAULT_PX_PER_MM);
 const scenarios = {
-  qualified: { value: 0.2018, title: "NR-024 · 合格样例" },
-  "operation-error": { value: 0.2264, title: "NR-024 · 操作误差" },
-  review: { value: 0.254, title: "NR-024 · 重点复核" },
+  qualified: { factor: 1.025, title: "NR-024 · 合格样例" },
+  "operation-error": { factor: 1.15, title: "NR-024 · 操作误差" },
+  review: { factor: 1.29, title: "NR-024 · 重点复核" },
 };
 
 const layerMap = {
@@ -44,13 +47,54 @@ function switchView(view) {
   window.scrollTo({ top: 0, behavior: "smooth" });
 }
 
+function validateCalibration() {
+  const input = $("#px-per-mm");
+  const value = Number(input.value);
+  const valid = Number.isFinite(value) && value > 0;
+  $("#calibration-error").textContent = valid ? "" : "请输入大于 0 的标定系数";
+  return valid ? value : null;
+}
+
 function validateRadius() {
   const input = $("#student-radius");
   const value = Number(input.value);
   const valid = Number.isFinite(value) && value > 0;
   $("#radius-error").textContent = valid ? "" : "请输入大于 0 的曲率半径";
-  $("#run-analysis").disabled = !valid;
+  $("#run-analysis").disabled = !valid || validateCalibration() === null;
   return valid ? value : null;
+}
+
+function updateCalibration({ persist = true, syncScenario = false } = {}) {
+  const pxPerMm = validateCalibration();
+  if (pxPerMm === null) {
+    $("#run-analysis").disabled = true;
+    return null;
+  }
+  systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, pxPerMm);
+  $("#calibration-readout").textContent = `1 mm = ${pxPerMm.toFixed(1)} px`;
+  $("#calibration-formula").textContent = `基准 ${BASE_PX_PER_MM} px/mm、R=${BASE_SYSTEM_RADIUS.toFixed(4)} m → 当前 R=${systemRadius.toFixed(4)} m`;
+  $("#system-result").innerHTML = `${systemRadius.toFixed(4)} <small>m</small>`;
+  $("#system-calibration-note").textContent = `${pxPerMm.toFixed(1)} px/mm · 25 环`;
+  $("#scale-display").textContent = pxPerMm.toFixed(1);
+  if (syncScenario) {
+    const scenario = scenarios[$("#scenario-select").value];
+    $("#student-radius").value = (systemRadius * scenario.factor).toFixed(4);
+  }
+  if (persist) {
+    try { localStorage.setItem(CALIBRATION_STORAGE_KEY, String(pxPerMm)); } catch {}
+  }
+  validateRadius();
+  return pxPerMm;
+}
+
+function resetResult(message = "参数已更新，点击开始智能核验查看判定。") {
+  resetProgress();
+  $("#result-panel").removeAttribute("data-status");
+  $("#result-icon").textContent = "✓";
+  $("#result-label").textContent = "等待核验";
+  $("#student-result").innerHTML = "— <small>m</small>";
+  $("#error-result").textContent = "—";
+  $("#result-note").textContent = message;
 }
 
 function resetProgress() {
@@ -64,7 +108,9 @@ function resetProgress() {
 
 async function runAnalysis() {
   const studentRadius = validateRadius();
-  if (studentRadius === null) return;
+  const pxPerMm = validateCalibration();
+  if (studentRadius === null || pxPerMm === null) return;
+  systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, pxPerMm);
   const button = $("#run-analysis");
   button.disabled = true;
   resetProgress();
@@ -81,7 +127,7 @@ async function runAnalysis() {
     $("#progress-percent").textContent = `${percent}%`;
     $("#progress-bar").style.width = `${percent}%`;
   }
-  const result = verifyRadius(studentRadius, SYSTEM_RADIUS);
+  const result = verifyRadius(studentRadius, systemRadius);
   const panel = $("#result-panel");
   panel.dataset.status = result.status;
   $("#result-icon").textContent = result.status === "qualified" ? "✓" : result.status === "operation-error" ? "!" : "↗";
@@ -164,16 +210,26 @@ function exportRecords() {
 function init() {
   $$(".nav-item").forEach((button) => button.addEventListener("click", () => switchView(button.dataset.view)));
   $("#student-radius").addEventListener("input", validateRadius);
+  let savedCalibration = DEFAULT_PX_PER_MM;
+  try {
+    const stored = Number(localStorage.getItem(CALIBRATION_STORAGE_KEY));
+    if (Number.isFinite(stored) && stored > 0) savedCalibration = stored;
+  } catch {}
+  $("#px-per-mm").value = savedCalibration.toFixed(1);
+  updateCalibration({ persist: false, syncScenario: true });
+  $("#px-per-mm").addEventListener("input", () => {
+    if (updateCalibration()) resetResult("标定系数已更新，系统曲率已按平方反比重新计算。");
+  });
+  $("#reset-calibration").addEventListener("click", () => {
+    $("#px-per-mm").value = DEFAULT_PX_PER_MM.toFixed(1);
+    updateCalibration({ syncScenario: true });
+    resetResult("已恢复默认标定系数 161.0 px/mm。");
+  });
   $("#run-analysis").addEventListener("click", runAnalysis);
   $("#scenario-select").addEventListener("change", (event) => {
-    $("#student-radius").value = scenarios[event.target.value].value;
+    $("#student-radius").value = (systemRadius * scenarios[event.target.value].factor).toFixed(4);
     validateRadius();
-    resetProgress();
-    $("#result-panel").removeAttribute("data-status");
-    $("#result-label").textContent = "等待核验";
-    $("#student-result").innerHTML = "— <small>m</small>";
-    $("#error-result").textContent = "—";
-    $("#result-note").textContent = "情景已切换，点击开始智能核验查看判定。";
+    resetResult("情景已切换，点击开始智能核验查看判定。");
   });
   let localImageUrl = null;
   $("#image-upload").addEventListener("change", (event) => {
