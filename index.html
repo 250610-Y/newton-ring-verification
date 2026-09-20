@@ -57,13 +57,12 @@
             <div class="image-stage">
               <img id="input-image" src="./assets/sample-original.png" alt="牛顿环实验原始增强图像">
               <div class="scan-line" aria-hidden="true"></div>
-              <div class="focus-target" aria-hidden="true"><span></span></div>
               <span class="image-tag">RAW / ENHANCED</span>
             </div>
             <div class="upload-row">
               <label class="upload-button" for="image-upload"><span>＋</span> 选择本地图像</label>
               <input id="image-upload" type="file" accept="image/*" hidden>
-              <p id="upload-note">或拖放到图像区域 · PNG / JPG</p>
+              <p id="upload-note">或拖放到图像区域 · PNG / JPG · 分析将使用当前图片</p>
             </div>
           </div>
 
@@ -103,7 +102,7 @@
               <div><span>学生提交 R</span><strong id="student-result">— <small>m</small></strong><em>实验报告值</em></div>
               <div><span>相对误差</span><strong id="error-result">—</strong><em>允许误差 ≤ 8%</em></div>
             </div>
-            <div class="result-note"><span>核验建议</span><p id="result-note">输入学生结果后开始核验，系统将根据真实样本曲率半径计算相对误差。</p></div>
+            <div class="result-note"><span>核验建议</span><p id="result-note">输入学生结果后开始核验，系统将根据当前图片拟合结果计算相对误差。</p></div>
             <div class="quality-row"><span>拟合优度 R²</span><div class="quality-line"><i style="width:93.9%"></i></div><strong>0.939</strong></div>
           </div>
         </div>
@@ -130,11 +129,11 @@
             </div>
           </div>
           <div class="insight-column">
-            <div class="panel optical-card"><div class="optic-rings"><i></i><i></i><i></i><i></i></div><div><span>检测中心</span><strong>(275.9, 251.8)</strong><small>同心度评分 0.315</small></div></div>
+              <div class="panel optical-card"><div class="optic-rings"><i></i><i></i><i></i><i></i></div><div><span>检测中心</span><strong id="center-display">等待当前图片</strong><small><span id="current-image-label">NR-024</span> · 图像拟合</small></div></div>
             <div class="metric-card-grid">
-              <div class="panel mini-metric"><span>有效环数</span><strong>29</strong><small>检测完整</small></div>
+              <div class="panel mini-metric"><span>有效环数</span><strong id="ring-count-display">25</strong><small>当前图片拟合</small></div>
               <div class="panel mini-metric"><span>局部缺陷</span><strong>1</strong><small class="warning">中度凹陷</small></div>
-              <div class="panel mini-metric"><span>拟合优度</span><strong>93.9%</strong><small>R² = 0.938985</small></div>
+              <div class="panel mini-metric"><span>拟合优度</span><strong id="fit-quality-display">93.9%</strong><small>当前图片拟合</small></div>
               <div class="panel mini-metric"><span>比例尺</span><strong id="scale-display">161.0</strong><small>px / mm · 当前装置</small></div>
             </div>
             <div class="panel defect-detail"><div class="detail-head"><span>DEFECT #01</span><b>建议复测</b></div><h3>中度凹陷</h3><p>检测中心位于 (187, 307)，方向角 −29.18°。该区域存在局部形变，建议结合原始记录进一步检测。</p><div class="location-grid"><span>类型 <b>凹陷</b></span><span>半径 <b>32 px</b></span><span>风险 <b>中度</b></span><span>来源 <b>真实报告</b></span></div></div>

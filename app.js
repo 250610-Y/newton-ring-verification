@@ -1,9 +1,12 @@
-import { BASE_SYSTEM_RADIUS, calculateCalibratedRadius, filterRecords, serializeRecordsCsv, verifyRadius } from "./logic.js";
+import { BASE_SYSTEM_RADIUS, analyzeNewtonRingImage, calculateCalibratedRadius, filterRecords, serializeRecordsCsv, verifyRadius } from "./logic.js";
 
 const BASE_PX_PER_MM = 213;
 const DEFAULT_PX_PER_MM = 161;
 const CALIBRATION_STORAGE_KEY = "newtonlab:px-per-mm";
 let systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, DEFAULT_PX_PER_MM);
+let latestPixels = null;
+let latestImageName = "NR-024";
+let latestImageAnalysis = null;
 const scenarios = {
   qualified: { factor: 1.025, title: "NR-024 · 合格样例" },
   "operation-error": { factor: 1.15, title: "NR-024 · 操作误差" },
@@ -70,11 +73,13 @@ function updateCalibration({ persist = true, syncScenario = false } = {}) {
     $("#run-analysis").disabled = true;
     return null;
   }
-  systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, pxPerMm);
+  refreshSystemRadius(pxPerMm);
   $("#calibration-readout").textContent = `1 mm = ${pxPerMm.toFixed(1)} px`;
-  $("#calibration-formula").textContent = `基准 ${BASE_PX_PER_MM} px/mm、R=${BASE_SYSTEM_RADIUS.toFixed(4)} m → 当前 R=${systemRadius.toFixed(4)} m`;
+  $("#calibration-formula").textContent = latestImageAnalysis
+    ? `${latestImageName} · 当前图片拟合 ${latestImageAnalysis.fitQuality.toFixed(3)}`
+    : `基准 ${BASE_PX_PER_MM} px/mm、R=${BASE_SYSTEM_RADIUS.toFixed(4)} m → 当前 R=${systemRadius.toFixed(4)} m`;
   $("#system-result").innerHTML = `${systemRadius.toFixed(4)} <small>m</small>`;
-  $("#system-calibration-note").textContent = `${pxPerMm.toFixed(1)} px/mm · 25 环`;
+  $("#system-calibration-note").textContent = `${pxPerMm.toFixed(1)} px/mm · ${latestImageAnalysis?.ringCount || 25} 环 · ${latestImageAnalysis ? "当前图片" : "NR-024"}`;
   $("#scale-display").textContent = pxPerMm.toFixed(1);
   if (syncScenario) {
     const scenario = scenarios[$("#scenario-select").value];
@@ -85,6 +90,40 @@ function updateCalibration({ persist = true, syncScenario = false } = {}) {
   }
   validateRadius();
   return pxPerMm;
+}
+
+function refreshSystemRadius(pxPerMm = Number($("#px-per-mm").value)) {
+  if (latestPixels) {
+    latestImageAnalysis = analyzeNewtonRingImage(latestPixels.data, latestPixels.width, latestPixels.height, { pxPerMm });
+    if (Number.isFinite(latestImageAnalysis.curvatureRadiusM) && latestImageAnalysis.curvatureRadiusM > 0) {
+      systemRadius = latestImageAnalysis.curvatureRadiusM;
+      return;
+    }
+  }
+  systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, pxPerMm);
+}
+
+function updateImageAnalysisReadout() {
+  if (!latestImageAnalysis) return;
+  $("#center-display").textContent = `(${latestImageAnalysis.centerX.toFixed(1)}, ${latestImageAnalysis.centerY.toFixed(1)})`;
+  $("#ring-count-display").textContent = String(latestImageAnalysis.ringCount || 0);
+  $("#fit-quality-display").textContent = `${(latestImageAnalysis.fitQuality * 100).toFixed(1)}%`;
+  $("#current-image-label").textContent = latestImageName;
+  $("#top-sample").textContent = latestImageName;
+}
+
+function analyzeCurrentImage(imageElement, fileName) {
+  const canvas = document.createElement("canvas");
+  canvas.width = imageElement.naturalWidth;
+  canvas.height = imageElement.naturalHeight;
+  const context = canvas.getContext("2d", { willReadFrequently: true });
+  context.drawImage(imageElement, 0, 0);
+  latestPixels = { data: context.getImageData(0, 0, canvas.width, canvas.height).data, width: canvas.width, height: canvas.height };
+  latestImageName = fileName;
+  refreshSystemRadius();
+  updateImageAnalysisReadout();
+  updateCalibration({ persist: false, syncScenario: true });
+  resetResult(`已根据 ${fileName} 的当前图像完成圆心与圆环拟合。`);
 }
 
 function resetResult(message = "参数已更新，点击开始智能核验查看判定。") {
@@ -110,7 +149,7 @@ async function runAnalysis() {
   const studentRadius = validateRadius();
   const pxPerMm = validateCalibration();
   if (studentRadius === null || pxPerMm === null) return;
-  systemRadius = calculateCalibratedRadius(BASE_SYSTEM_RADIUS, BASE_PX_PER_MM, pxPerMm);
+  refreshSystemRadius(pxPerMm);
   const button = $("#run-analysis");
   button.disabled = true;
   resetProgress();
@@ -237,8 +276,10 @@ function init() {
     if (!file) return;
     if (localImageUrl) URL.revokeObjectURL(localImageUrl);
     localImageUrl = URL.createObjectURL(file);
-    $("#input-image").src = localImageUrl;
-    $("#upload-note").textContent = `已预览 ${file.name} · 分析结果仍使用 NR-024 演示数据`;
+    const image = $("#input-image");
+    image.onload = () => analyzeCurrentImage(image, file.name);
+    image.src = localImageUrl;
+    $("#upload-note").textContent = `已预览 ${file.name} · 分析结果将使用当前图片`;
   });
   $$(".layer-tabs button").forEach((button) => button.addEventListener("click", () => selectLayer(button.dataset.layer)));
   $("#layer-image").addEventListener("error", (event) => {
